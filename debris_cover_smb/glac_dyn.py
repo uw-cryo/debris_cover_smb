@@ -14,7 +14,7 @@ import skimage.feature
 import scipy.ndimage 
 from velocity_proc import velocity_timeseries
 
-def gauss_fltr_astropy_fft(dem, size=None, sigma=None, origmask=False, fill_interior=False):
+def gauss_fltr_astropy_fft(dem, size=None, sigma=None, origmask=True, fill_interior=False):
     
     """
     ## Applying original mask=True is recommended to take care of bleeding along edges
@@ -93,7 +93,7 @@ def gauss_fltr_astropy_fft(dem, size=None, sigma=None, origmask=False, fill_inte
         if fill_interior:
             mask = malib.maskfill(dem)
         else:
-            mask = dem.mask
+            mask = np.ma.getmask(dem)
         dem_filt_gauss = np.ma.array(dem_filt_gauss, mask=mask, fill_value=dem.fill_value)
     out = np.ma.fix_invalid(dem_filt_gauss, copy=False, fill_value=dem.fill_value)
     out.set_fill_value(dem.fill_value.astype(dem.dtype))
