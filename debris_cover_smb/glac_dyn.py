@@ -936,7 +936,7 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enha
     
     # here again change the compute_along_slope_flow_correction function
 
-    dem1_glac = velocity_timeseries.mask_by_shp(glac_shp.geometry,dem1,ds_list[0])
+    dem1_glac = geospatial.mask_by_shp(glac_shp.geometry,dem1,ds_list[0])
     downslope_dhdt_smooth = compute_along_slope_flow_correction_working(dem1_glac,vx,vy,dt,smooth=True,px_lengthscale=lengtscales,
                                                               res=H_res,annual=True,lookup_indexes=px_indices)
 
@@ -1027,9 +1027,9 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enha
         debris_shp = binary2shapefile(debris_temp,1,ds=ds_list_highres[2])
         ice_shp = glac_shp.overlay(debris_shp,how='difference') # this is all bare ice
         background_shp = debris_shp.overlay(hotspot_binary_gdf,how='difference') # this is all background debris
-        background_smb_dhdt = velocity_timeseries.mask_by_shp(background_shp.geometry,smb_clean,ds=ds_list_highres[1])
-        hotspot_smb_dhdt = velocity_timeseries.mask_by_shp(hotspot_binary_gdf.geometry,smb_clean,ds=ds_list_highres[1])
-        clean_ice_dhdt = velocity_timeseries.mask_by_shp(ice_shp.geometry,smb_clean,ds=ds_list_highres[1])
+        background_smb_dhdt = geospatial.mask_by_shp(background_shp.geometry,smb_clean,ds=ds_list_highres[1])
+        hotspot_smb_dhdt = geospatial.mask_by_shp(hotspot_binary_gdf.geometry,smb_clean,ds=ds_list_highres[1])
+        clean_ice_dhdt = geospatial.mask_by_shp(ice_shp.geometry,smb_clean,ds=ds_list_highres[1])
         #debris_smb_dhdt = np.ma.array(smb_clean,mask=debris_ma.mask)
 
         #background_smb_dhdt = np.ma.array(debris_smb_dhdt,mask=hotspot_binary_map)

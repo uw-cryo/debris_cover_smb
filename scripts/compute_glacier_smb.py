@@ -2,8 +2,7 @@
 
 import argparse
 import os,sys,glob
-from debris_cover_smb import glac_dyn
-from velocity_proc import constants
+from debris_cover_smb import glac_dyn,constants
 from datetime import datetime
 import geopandas as gpd 
 
@@ -48,9 +47,10 @@ def main():
         H_fn = constants.fetch_milan_thickness(args.glac_identifier)
         out_identifier = f"{args.glac_identifier}_millan"
     debris_thick_fn = constants.fetch_rounce_debris_thickness(args.glac_identifier)
+    debris_melt_enhancement_fn = constants.fetch_rounce_debris_melt_enhancement(args.glac_identifier)
     glac_shp = gpd.read_file(constants.fetch_glac_shp(constants.rgi_dicts[args.glac_identifier])).to_crs('EPSG:32645')
     divQ2, euldhdt, lag_dhdt, downslope_dhdt, smb_dhdt,stats_df = glac_dyn.lag_smb_workflow(args.dem1_fn,args.dem2_fn,args.vx_fn,
-                                                             args.vy_fn,H_fn,debris_thick_fn,glac_shp,out_identifier, args.lengthscale_factor,
+                                                             args.vy_fn,H_fn,debris_thick_fn,debris_melt_enhancement_fn,glac_shp,out_identifier, args.lengthscale_factor,
                                                              args.num_thickness_division,args.smr_cutoff,args.timescale,args.icecliff_gpkg,
                                                              args.writeout,args.saveplot,args.outdir,conserve_mass=args.conserve_mass)
      
