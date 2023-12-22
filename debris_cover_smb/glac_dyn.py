@@ -12,7 +12,7 @@ from skimage.restoration import inpaint_biharmonic
 import skimage.filters
 import skimage.feature
 import scipy.ndimage 
-from velocity_proc import velocity_timeseries
+from debris_cover_smb import geospatial
 
 def gauss_fltr_astropy_fft(dem, size=None, sigma=None, origmask=True, fill_interior=False):
     
@@ -920,7 +920,7 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
     
     # here again change the compute_along_slope_flow_correction function
 
-    dem1_glac = velocity_timeseries.mask_by_shp(glac_shp.geometry,dem1,ds_list[0])
+    dem1_glac = geospatial.mask_by_shp(glac_shp.geometry,dem1,ds_list[0])
     downslope_dhdt_smooth = compute_along_slope_flow_correction_working(dem1_glac,vx,vy,dt,smooth=True,px_lengthscale=lengtscales,
                                                               res=H_res,annual=True,lookup_indexes=px_indices)
 
@@ -956,13 +956,14 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
     # Lagrangian elevation change (start of path)
     #compute_lagrangian function will change to adapt for dt terms ?
     lag_dhdt,dem2_flow_corrected = compute_lagrangian(dem1,dem2,vx,vy,dt,return_shifted_dem=True)
+    slope_corrected_lag_dhdt = lag_dhdt - downslope_dhdt
 
     
     
     
 
     print("******** Step 4: Computing Elevation change due to surface melting: Continuity equation *****************")
-    smb_dhdt = lag_dhdt - downslope_dhdt + divQ2
+    smb_dhdt = slope_corrected_lag_dhdt + divQ2
 
    
         
@@ -1010,9 +1011,9 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
         debris_shp = binary2shapefile(debris_temp,1,ds=ds_list_highres[2])
         ice_shp = glac_shp.overlay(debris_shp,how='difference') # this is all bare ice
         background_shp = debris_shp.overlay(hotspot_binary_gdf,how='difference') # this is all background debris
-        background_smb_dhdt = velocity_timeseries.mask_by_shp(background_shp.geometry,smb_clean,ds=ds_list_highres[1])
-        hotspot_smb_dhdt = velocity_timeseries.mask_by_shp(hotspot_binary_gdf.geometry,smb_clean,ds=ds_list_highres[1])
-        clean_ice_dhdt = velocity_timeseries.mask_by_shp(ice_shp.geometry,smb_clean,ds=ds_list_highres[1])
+        background_smb_dhdt = geospatial.mask_by_shp(background_shp.geometry,smb_clean,ds=ds_list_highres[1])
+        hotspot_smb_dhdt = geospatial.mask_by_shp(hotspot_binary_gdf.geometry,smb_clean,ds=ds_list_highres[1])
+        clean_ice_dhdt = geospatial.mask_by_shp(ice_shp.geometry,smb_clean,ds=ds_list_highres[1])
         #debris_smb_dhdt = np.ma.array(smb_clean,mask=debris_ma.mask)
 
         #background_smb_dhdt = np.ma.array(debris_smb_dhdt,mask=hotspot_binary_map)
@@ -1044,16 +1045,18 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
     print("************ Saving files *******************")
     eul_dhdt_fn = os.path.join(outdir,f'{prefix}_eulerian_dhdt.tif')
     lag_dhdt_fn = os.path.join(outdir,f'{prefix}_lagrangian_dhdt.tif')
-    #downslope_dhdt_fn = os.path.join(outdir,f'{prefix}_downslope_dhdt.tif')
+    slope_corrected_lag_dhdt_fn = os.path.join(outdir,f'{prefix}_slope_corrected_lagrangian_dhdt.tif')
     smb_dhdt_fn = os.path.join(outdir,f'{prefix}_smb_dhdt.tif')
     
     if timescale == 'day':
         eul_dhdt = eul_dhdt * dt
         lag_dhdt = lag_dhdt * dt
+        slope_corrected_lag_dhdt = slope_corrected_lag_dhdt * dt
         smb_dhdt = smb_dhdt * dt
     iolib.writeGTiff(eul_dhdt,eul_dhdt_fn,src_ds=ds_list_highres[0])
     iolib.writeGTiff(lag_dhdt,lag_dhdt_fn,src_ds=ds_list_highres[0])
-    #iolib.writeGTiff(downslope_dhdt,downslope_dhdt_fn,src_ds=ds_list_highres[0])
+    iolib.writeGTiff(slope_corrected_lag_dhdt,
+                     slope_corrected_lag_dhdt_fn,src_ds=ds_list_highres[0])
     iolib.writeGTiff(smb_dhdt,smb_dhdt_fn,src_ds=ds_list_highres[0])
     if timescale == 'year':
         stats_fn = os.path.join(outdir,f'{prefix}_altitudnal_meltstats.csv')
