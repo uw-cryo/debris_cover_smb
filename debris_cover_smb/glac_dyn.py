@@ -600,7 +600,7 @@ def add_quiver_contour(ax, vx, vy, stride=5, color='dodgerblue',scale=500,levels
         ax.contour(np.ma.sqrt(vx**2+vy**2),colors='k',linewidths=0.35,
             levels=levels)
         
-def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick,vm,z1,ds,bin_width=50):
+def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick,debris_melt_enhancement_ma,vm,z1,ds,bin_width=50):
     # digitise and other tricks picked from gmbtools repository by David
     res = geolib.get_res(ds,square=True)
     z_bin_edges, z_bin_centers = malib.get_bins(z1, bin_width)
@@ -639,6 +639,11 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
     debthick_bin_nmad = np.ma.masked_all_like(mb_bin_med_background)
     debthick_bin_q1 = np.ma.masked_all_like(mb_bin_med_background)
     debthick_bin_q3 = np.ma.masked_all_like(mb_bin_med_background)
+    
+    debrismelt_enhancement_bin_med = np.ma.masked_all_like(mb_bin_med_background)
+    debrismelt_enhancement_bin_nmad = np.ma.masked_all_like(mb_bin_med_background)
+    debrismelt_enhancement_bin_q1 = np.ma.masked_all_like(mb_bin_med_background)
+    debrismelt_enhancement_bin_q3 = np.ma.masked_all_like(mb_bin_med_background)
 
     vm_bin_med = np.ma.masked_all_like(mb_bin_med_background)
     vm_bin_nmad = np.ma.masked_all_like(mb_bin_med_background)
@@ -691,6 +696,14 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
         debthick_bin_q1[bin_n] = q1
         debthick_bin_q3[bin_n] = q3 
 
+        #debris melt enhancement
+        debrismelt_enhancement_samp = debris_melt_enhancement_ma[(idx == bin_n+1)]
+        debrismelt_enhancement_bin_med[bin_n] = np.round(malib.fast_median(debrismelt_enhancement_samp),2)
+        debrismelt_enhancement_bin_nmad[bin_n] = np.round(malib.mad(debrismelt_enhancement_samp),2)
+        q1,q3 = np.nanpercentile(debrismelt_enhancement_samp.filled(np.nan),(25,75))
+        debrismelt_enhancement_bin_q1[bin_n] = q1
+        debrismelt_enhancement_bin_q3[bin_n] = q3
+
         # velocity magnitude vm
         vm_samp = vm[(idx == bin_n+1)]
         vm_bin_med[bin_n] = np.round(malib.fast_median(vm_samp),2)
@@ -726,6 +739,9 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
 
         'med_deb_thick':debthick_bin_med,'nmad_deb_thick':debthick_bin_nmad,
         'q1_deb_thick':debthick_bin_q1,'q3_deb_thick':debthick_bin_q3,
+
+        'med_deb_melt_enhancement':debrismelt_enhancement_bin_med,'nmad_deb_thick':debrismelt_enhancement_bin_nmad,
+        'q1_deb_thick':debrismelt_enhancement_bin_q1,'q3_deb_thick':debrismelt_enhancement_bin_q3,
 
         'med_vm':vm_bin_med,'nmad_vm':vm_bin_nmad,
         'q1_vm':vm_bin_q1,'q3_vm':vm_bin_q3,
@@ -797,7 +813,7 @@ def prepare_lag_smb_figure(eul_dhdt,lag_dhdt, downslope_dhdt, smb_dhdt,ds,ax,cli
 
 
 #################### Full Lag SMB workflow function ###########################
-def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac_identifier,lengthscale_factor=4,
+def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enhacement_fn,glac_shp,glac_identifier,lengthscale_factor=4,
                      num_thickness_division=5,smr_cutoff=135,timescale='year',icecliff_gpkg=None,writeout=True,saveplot=True,outdir=None,
                      conserve_mass=True):
     """
@@ -920,7 +936,7 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
     
     # here again change the compute_along_slope_flow_correction function
 
-    dem1_glac = geospatial.mask_by_shp(glac_shp.geometry,dem1,ds_list[0])
+    dem1_glac = velocity_timeseries.mask_by_shp(glac_shp.geometry,dem1,ds_list[0])
     downslope_dhdt_smooth = compute_along_slope_flow_correction_working(dem1_glac,vx,vy,dt,smooth=True,px_lengthscale=lengtscales,
                                                               res=H_res,annual=True,lookup_indexes=px_indices)
 
@@ -948,8 +964,8 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
     # warp 50 m resolution data (ice-thickness and flux divergence) and read as masked arrays
     #warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,'divQ2_smooth_ver1.tif']],res='first',r='cubicspline')[-2:]
     #use cubicspline as these 2 products are lower res
-    H,divQ2,debris_ma,downslope_dhdt = [iolib.ds_getma(ds) for ds in warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,fluxdiv_outfn,deb_thick_fn,downslope_outfn]],
-                                                                                   res='first',r='cubic',extent='first')[-4:]]
+    H,divQ2,debris_ma,debris_melt_enhancement_ma,downslope_dhdt = [iolib.ds_getma(ds) for ds in warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,fluxdiv_outfn,deb_thick_fn,deb_melt_enhacement_fn,downslope_outfn]],
+                                                                                   res='first',r='cubic',extent='first')[-5:]]
 
     # Eulerian elevation change
     eul_dhdt = (dem2-dem1)/dt
@@ -1011,9 +1027,9 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
         debris_shp = binary2shapefile(debris_temp,1,ds=ds_list_highres[2])
         ice_shp = glac_shp.overlay(debris_shp,how='difference') # this is all bare ice
         background_shp = debris_shp.overlay(hotspot_binary_gdf,how='difference') # this is all background debris
-        background_smb_dhdt = geospatial.mask_by_shp(background_shp.geometry,smb_clean,ds=ds_list_highres[1])
-        hotspot_smb_dhdt = geospatial.mask_by_shp(hotspot_binary_gdf.geometry,smb_clean,ds=ds_list_highres[1])
-        clean_ice_dhdt = geospatial.mask_by_shp(ice_shp.geometry,smb_clean,ds=ds_list_highres[1])
+        background_smb_dhdt = velocity_timeseries.mask_by_shp(background_shp.geometry,smb_clean,ds=ds_list_highres[1])
+        hotspot_smb_dhdt = velocity_timeseries.mask_by_shp(hotspot_binary_gdf.geometry,smb_clean,ds=ds_list_highres[1])
+        clean_ice_dhdt = velocity_timeseries.mask_by_shp(ice_shp.geometry,smb_clean,ds=ds_list_highres[1])
         #debris_smb_dhdt = np.ma.array(smb_clean,mask=debris_ma.mask)
 
         #background_smb_dhdt = np.ma.array(debris_smb_dhdt,mask=hotspot_binary_map)
@@ -1024,10 +1040,10 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
     if timescale == 'year':
         print("***** Analysis2: Calcuating bin-wise melt stats *************")
         # limit elevation to glacier extent for binning
-        base_elevation = np.ma.array(dem1,mask=H.mask)
-        vm = np.ma.array(np.ma.sqrt(vx**2+vy**2),mask=H.mask)
+        base_elevation = np.ma.array(dem1,mask=np.ma.getmask(H))
+        vm = np.ma.array(np.ma.sqrt(vx**2+vy**2),mask=np.ma.getmask(H))
         
-        stats_df = hist_plot_gmbtools(hotspot_smb_dhdt,background_smb_dhdt,clean_ice_dhdt,smb_clean,debris_ma,vm,base_elevation,ds_list_highres[0])
+        stats_df = hist_plot_gmbtools(hotspot_smb_dhdt,background_smb_dhdt,clean_ice_dhdt,smb_clean,debris_ma,debris_melt_enhancement_ma,vm,base_elevation,ds_list_highres[0])
         
         
         print("************ Creating plots ****************")
@@ -1045,7 +1061,8 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
     print("************ Saving files *******************")
     eul_dhdt_fn = os.path.join(outdir,f'{prefix}_eulerian_dhdt.tif')
     lag_dhdt_fn = os.path.join(outdir,f'{prefix}_lagrangian_dhdt.tif')
-    slope_corrected_lag_dhdt_fn = os.path.join(outdir,f'{prefix}_slope_corrected_lagrangian_dhdt.tif')
+    slope_corrected_lag_dhdt_fn = os.path.join(outdir,
+                                               f'{prefix}_slope_corrected_lagrangian_dhdt.tif')
     smb_dhdt_fn = os.path.join(outdir,f'{prefix}_smb_dhdt.tif')
     
     if timescale == 'day':
@@ -1056,7 +1073,7 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
     iolib.writeGTiff(eul_dhdt,eul_dhdt_fn,src_ds=ds_list_highres[0])
     iolib.writeGTiff(lag_dhdt,lag_dhdt_fn,src_ds=ds_list_highres[0])
     iolib.writeGTiff(slope_corrected_lag_dhdt,
-                     slope_corrected_lag_dhdt_fn,src_ds=ds_list_highres[0])
+                      slope_corrected_lag_dhdt_fn,src_ds=ds_list_highres[0])
     iolib.writeGTiff(smb_dhdt,smb_dhdt_fn,src_ds=ds_list_highres[0])
     if timescale == 'year':
         stats_fn = os.path.join(outdir,f'{prefix}_altitudnal_meltstats.csv')
@@ -1068,3 +1085,4 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,glac_shp,glac
     ## Prepare saving image script
     stats_df = 'none'
     return divQ2,eul_dhdt,lag_dhdt,downslope_dhdt,smb_dhdt,stats_df
+
