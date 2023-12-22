@@ -1,7 +1,9 @@
 #! /usr/bin/env python
 
+import os,sys
 import numpy as np
 import rasterio
+from pygeotools.lib import iolib,geolib
 from affine import Affine
 
 def mask_by_shp(geom,array,ds,invert=False):
@@ -37,3 +39,18 @@ def mask_by_shp(geom,array,ds,invert=False):
         masked_array = np.ma.array(array,mask=shp_mask.mask)
     return np.ma.fix_invalid(masked_array)
 
+def clip_raster_by_shp_disk(r_fn,shp_fn,extent='raster',invert=False,out_fn=None):
+    """
+    # this is a lightweight version of directly being used from https://github.com/dshean/pygeotools/blob/master/pygeotools/clip_raster_by_shp.py
+    # meant to limit subprocess calls
+    """
+    if not os.path.exists(r_fn):
+        sys.exit("Unable to find r_fn: %s" % r_fn)
+    if not os.path.exists(shp_fn):
+        sys.exit("Unable to find shp_fn: %s" % shp_fn)
+     #Do the clipping
+    r, r_ds = geolib.raster_shpclip(r_fn, shp_fn,extent=extent,invert=invert)
+    if not out_fn:
+        out_fn = os.path.splitext(r_fn)[0]+'_shpclip.tif'
+    iolib.writeGTiff(r, out_fn, r_ds)
+    
