@@ -46,6 +46,19 @@ def fetch_rounce_debris_thickness(glac_name):
     except:
         print("neither debris thickness nor extrap file not found")
 
+def fetch_rounce_debris_melt_enhancement(glac_name):
+    rgi_id = rgi_dicts[glac_name].split('-')[1]
+    try:
+        debris_thick_fn = os.path.join(rounce_debris_thickness_dir,f'HMA_DTE_{rgi_id}_meltfactor.tif')
+        if not os.path.exists(debris_thick_fn):
+            print("debris melt enhancement factor not found, will return extrap product")
+            debris_thick_extrap_fn = glob.glob(os.path.join(rounce_debris_thickness_dir,f'HMA_DTE_{rgi_id}_meltfactor_extrap.tif'))[0]
+            out = debris_thick_extrap_fn
+        else:
+            out = debris_thick_fn
+        return out
+    except:
+        print("neither debris thickness nor extrap file not found")
 
 def fetch_glac_shp(rgi_id):
     glac_shp = os.path.join(rgi_dir,f'{rgi_id}_shp.gpkg')
@@ -126,4 +139,6 @@ def fetch_millan_velocity(glac_name):
                 geospatial.clip_raster_by_shp_disk(vy,glac_shp_fn,extent='shp',out_fn=millan_vy_fn)
                 geospatial.clip_raster_by_shp_disk(vm,glac_shp_fn,extent='shp',out_fn=millan_vm_fn)
     return millan_vx_fn, millan_vy_fn, millan_vm_fn
+
+
 
