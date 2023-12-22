@@ -3,6 +3,7 @@
 import os,sys
 import numpy as np
 import rasterio
+import rasterio.features
 from pygeotools.lib import iolib,geolib
 from affine import Affine
 
@@ -53,4 +54,4 @@ def clip_raster_by_shp_disk(r_fn,shp_fn,extent='raster',invert=False,out_fn=None
     if not out_fn:
         out_fn = os.path.splitext(r_fn)[0]+'_shpclip.tif'
     iolib.writeGTiff(r, out_fn, r_ds)
-    
+

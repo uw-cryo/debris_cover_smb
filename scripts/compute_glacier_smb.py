@@ -22,7 +22,7 @@ def getparser():
         help='Factor to multiply ice thickness values with for computing lengthscale (default: %(default)s)')
     timescale_opts = ['day','year']
     parser.add_argument('-timescale',type=str,default='year',choices=timescale_opts, help='Computation is in m/yr or m/day, (default: %(default)s)')
-    parser.add_argument('-num_thickness_division', default=5, type=int, 
+    parser.add_argument('-num_thickness_divison', default=20, type=int, 
         help='number of bins to divide the thickness values in (used for adaptive thickness gaussian filtering) (default: %(default)s)')
     parser.add_argument('-icecliff_gpkg',type=str,default=None,help='Path to user-provided ice cliff location file, will compute one if not provided (default: %(default)s)')
     parser.add_argument('-smr_cutoff',default=135.0,type=float,
@@ -51,7 +51,7 @@ def main():
     glac_shp = gpd.read_file(constants.fetch_glac_shp(constants.rgi_dicts[args.glac_identifier])).to_crs('EPSG:32645')
     divQ2, euldhdt, lag_dhdt, downslope_dhdt, smb_dhdt,stats_df = glac_dyn.lag_smb_workflow(args.dem1_fn,args.dem2_fn,args.vx_fn,
                                                              args.vy_fn,H_fn,debris_thick_fn,debris_melt_enhancement_fn,glac_shp,out_identifier, args.lengthscale_factor,
-                                                             args.num_thickness_division,args.smr_cutoff,args.timescale,args.icecliff_gpkg,
+                                                             args.num_thickness_divison,args.smr_cutoff,args.timescale,args.icecliff_gpkg,
                                                              args.writeout,args.saveplot,args.outdir,conserve_mass=args.conserve_mass)
      
 

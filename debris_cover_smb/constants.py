@@ -27,7 +27,7 @@ rgi_dicts = {'ngozumpa':'RGI60-15.03473',
 def fetch_farinotti_thickness(glac_name):
     rgi_id = rgi_dicts[glac_name]
     try:
-        thick_fn = glob.glob(os.path.join(farinotti_thickness_dir,f'{rgi_id}_thickness.tif'))[0]
+        thick_fn = glob.glob(os.path.join(farinotti_thickness_dir,f'RGI60-15/{rgi_id}_thickness.tif'))[0]
         return thick_fn
     except:
         print("thickness file not found") 
@@ -64,14 +64,10 @@ def fetch_glac_shp(rgi_id):
     glac_shp = os.path.join(rgi_dir,f'{rgi_id}_shp.gpkg')
     if not os.path.exists(glac_shp):
         print("Shapefile not found, creating a new shapefile")
-        #if rgi_id == 'RGI60-01.16201':
-         #   gdf = gpd.read_file(rgi_region1_fn)
-          #  mask = gdf['RGIId'] == rgi_id
-           # gdf[mask].to_file(glac_shp,driver='GPKG')
-        else:
-            gdf = gpd.read_file(os.path.join(rgi_dir,'15_rgi60_SouthAsiaEast.shp'))
-            mask = gdf['RGIId'] == rgi_id
-            gdf[mask].to_file(glac_shp,driver='GPKG')
+       
+        gdf = gpd.read_file(os.path.join(rgi_dir,'15_rgi60_SouthAsiaEast.shp'))
+        mask = gdf['RGIId'] == rgi_id
+        gdf[mask].to_file(glac_shp,driver='GPKG')
     return glac_shp
 
 def raster_bound_geom(fn,out_crs=None):
