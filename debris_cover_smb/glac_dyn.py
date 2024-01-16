@@ -455,7 +455,9 @@ def high_slope_high_melt(slope1,slope2,dhdt,ds,slope_cutoff=10,dhdt_cutoff=-2.5,
     high_melt_mask = create_masked_boolean_array(dhdt,dhdt_cutoff,gte=False)
     ice_cliff_mask_local = steep_union_mask*high_melt_mask
 
+
     if debris_cover_area is not None:
+        debris_cover_area = inpaint_fill(debris_cover_area,filllimit=100)
         ice_cliff_mask_local = np.ma.array(ice_cliff_mask_local,mask=debris_cover_area.mask)
     
     gdf = binary2shapefile(ice_cliff_mask_local,val=1,ds=ds)
@@ -464,7 +466,7 @@ def high_slope_high_melt(slope1,slope2,dhdt,ds,slope_cutoff=10,dhdt_cutoff=-2.5,
     big_cliffs = gdf.area > min_area
     
     return gdf[big_cliffs]
-
+    
 def gdal2rasterio_transform(gt_fn):
     from rasterio import Affine
     return Affine(gt_fn[1],gt_fn[2],gt_fn[0],gt_fn[4],gt_fn[5],gt_fn[3])
@@ -600,7 +602,7 @@ def add_quiver_contour(ax, vx, vy, stride=5, color='dodgerblue',scale=500,levels
         ax.contour(np.ma.sqrt(vx**2+vy**2),colors='k',linewidths=0.35,
             levels=levels)
         
-def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick,debris_melt_enhancement_ma,vm,z1,ds,bin_width=50):
+def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick,debris_melt_enhancement_ma,vm,z1,ds,bin_width=50,divQ2_error=None):
     # digitise and other tricks picked from gmbtools repository by David
     res = geolib.get_res(ds,square=True)
     z_bin_edges, z_bin_centers = malib.get_bins(z1, bin_width)
@@ -649,6 +651,10 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
     vm_bin_nmad = np.ma.masked_all_like(mb_bin_med_background)
     vm_bin_q1 = np.ma.masked_all_like(mb_bin_med_background)
     vm_bin_q3 = np.ma.masked_all_like(mb_bin_med_background)
+
+    if divQ2_error is not None:
+        divQ2_error_bin_mean = np.ma.masked_all_like(mb_bin_med_background)
+        divQ2_error_bin_med = np.ma.masked_all_like(mb_bin_med_background)
     
     idx = np.digitize(z1,z_bin_edges)
     for bin_n in range(z_bin_centers.size):
@@ -711,6 +717,10 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
         q1,q3 = np.nanpercentile(vm_samp.filled(np.nan),(25,75))
         vm_bin_q1[bin_n] = q1
         vm_bin_q3[bin_n] = q3
+        if divQ2_error is not None:
+            divQ2_samp = divQ2_error[(idx == bin_n+1)]
+            divQ2_error_bin_mean[bin_n] = np.round(np.ma.mean(divQ2_samp),2) 
+            divQ2_error_bin_med[bin_n] = np.round(malib.fast_median(divQ2_samp),2)
         
         
         
@@ -748,6 +758,9 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
 
         'z_area':z1_bin_areas,
         'z_bin_centers':z_bin_centers})
+    if divQ2_error is not None:
+        stats_df['divQ2_mean_stddev'] = divQ2_error_bin_mean
+        stats_df['divQ2_med_stddev'] = divQ2_error_bin_med
     
     return stats_df
 
@@ -815,7 +828,7 @@ def prepare_lag_smb_figure(eul_dhdt,lag_dhdt, downslope_dhdt, smb_dhdt,ds,ax,cli
 #################### Full Lag SMB workflow function ###########################
 def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enhacement_fn,glac_shp,glac_identifier,lengthscale_factor=4,
                      num_thickness_division=5,smr_cutoff=135,timescale='year',icecliff_gpkg=None,writeout=True,saveplot=True,outdir=None,
-                     conserve_mass=True):
+                     conserve_mass=True,flux_divergence_sensitivity_fn=None):
     """
     Workflow to compute residual elevation change due to surface melting following the continuity equation
     Parameters
@@ -964,9 +977,13 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enha
     # warp 50 m resolution data (ice-thickness and flux divergence) and read as masked arrays
     #warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,'divQ2_smooth_ver1.tif']],res='first',r='cubicspline')[-2:]
     #use cubicspline as these 2 products are lower res
-    H,divQ2,debris_ma,debris_melt_enhancement_ma,downslope_dhdt = [iolib.ds_getma(ds) for ds in warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,fluxdiv_outfn,deb_thick_fn,deb_melt_enhacement_fn,downslope_outfn]],
+    if flux_divergence_sensitivity_fn is not None:
+        H,divQ2,divQ2_error,debris_ma,debris_melt_enhancement_ma,downslope_dhdt = [iolib.ds_getma(ds) for ds in warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,fluxdiv_outfn,flux_divergence_sensitivity_fn,deb_thick_fn,deb_melt_enhacement_fn,downslope_outfn]],
+                                                                                   res='first',r='cubic',extent='first')[-6:]]
+    else:
+        H,divQ2,debris_ma,debris_melt_enhancement_ma,downslope_dhdt = [iolib.ds_getma(ds) for ds in warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,fluxdiv_outfn,deb_thick_fn,deb_melt_enhacement_fn,downslope_outfn]],
                                                                                    res='first',r='cubic',extent='first')[-5:]]
-
+        divQ2_error = None
     # Eulerian elevation change
     eul_dhdt = (dem2-dem1)/dt
     # Lagrangian elevation change (start of path)
@@ -1019,8 +1036,8 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enha
         ### I will have to replace it later with a slope dependent reasoning
         #set max_smb to very high value
         max_smb = 12
-        smb_clean = np.ma.masked_greater_equal(smb_dhdt,max_smb)
-    
+        #smb_clean = np.ma.masked_greater_equal(smb_dhdt,max_smb)
+        smb_clean = smb_dhdt.copy()
     if timescale == 'year':
         #there are edge boundary artifacts, so we will use shapefiles here to do best
         debris_temp = np.ma.array(np.ma.ones(debris_ma.shape),mask=np.ma.getmask(debris_ma),dtype=np.int16)
@@ -1030,6 +1047,7 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enha
         background_smb_dhdt = geospatial.mask_by_shp(background_shp.geometry,smb_clean,ds=ds_list_highres[1])
         hotspot_smb_dhdt = geospatial.mask_by_shp(hotspot_binary_gdf.geometry,smb_clean,ds=ds_list_highres[1])
         clean_ice_dhdt = geospatial.mask_by_shp(ice_shp.geometry,smb_clean,ds=ds_list_highres[1])
+
         #debris_smb_dhdt = np.ma.array(smb_clean,mask=debris_ma.mask)
 
         #background_smb_dhdt = np.ma.array(debris_smb_dhdt,mask=hotspot_binary_map)
@@ -1043,7 +1061,7 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enha
         base_elevation = np.ma.array(dem1,mask=np.ma.getmask(H))
         vm = np.ma.array(np.ma.sqrt(vx**2+vy**2),mask=np.ma.getmask(H))
         
-        stats_df = hist_plot_gmbtools(hotspot_smb_dhdt,background_smb_dhdt,clean_ice_dhdt,smb_clean,debris_ma,debris_melt_enhancement_ma,vm,base_elevation,ds_list_highres[0])
+        stats_df = hist_plot_gmbtools(hotspot_smb_dhdt,background_smb_dhdt,clean_ice_dhdt,smb_clean,debris_ma,debris_melt_enhancement_ma,vm,base_elevation,ds_list_highres[0],divQ2_error=divQ2_error)
         
         
         print("************ Creating plots ****************")
@@ -1075,6 +1093,7 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enha
     iolib.writeGTiff(slope_corrected_lag_dhdt,
                       slope_corrected_lag_dhdt_fn,src_ds=ds_list_highres[0])
     iolib.writeGTiff(smb_dhdt,smb_dhdt_fn,src_ds=ds_list_highres[0])
+    #iolib.writeGTiff(slope2,os.path.join(outdir,'slope2_flow_corrected_fn.tif'),src_ds=ds_list_highres[1])
     if timescale == 'year':
         stats_fn = os.path.join(outdir,f'{prefix}_altitudnal_meltstats.csv')
         hotspot_shp_fn = os.path.join(outdir,f'{prefix}_hotspot_location.gpkg')

@@ -9,10 +9,10 @@ data_dir = iolib.get_datadir()
 
 farinotti_thickness_dir = os.path.join(data_dir,'farinotti_2019_ice_thickness')
 rounce_debris_thickness_dir = os.path.join(data_dir,'debris_thickness')
-millan_thickness_dir = os.path.join(data_dir,'millan_thickness')
-millan_velocity_dir = os.path.join(data_dir,'millan_velocity')
+millan_thickness_dir = os.path.join(data_dir,'millan_thickness/RGI-13-15')
+millan_velocity_dir = os.path.join(data_dir,'millan_velocity/RGI-13-15')
 rgi_dir = os.path.join(data_dir,'rgi60/regions/rgi15/')
-hma_ara_crs = '+proj=aea +lat_0=36 +lon_0=85 +lat_1=25 +lat_2=47 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs'
+hma_aea_crs = '+proj=aea +lat_0=36 +lon_0=85 +lat_1=25 +lat_2=47 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs'
 
 rgi_dicts = {'ngozumpa':'RGI60-15.03473',
              'khumbu': 'RGI60-15.03733',
