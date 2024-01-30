@@ -751,7 +751,7 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
         'q1_deb_thick':debthick_bin_q1,'q3_deb_thick':debthick_bin_q3,
 
         'med_deb_melt_enhancement':debrismelt_enhancement_bin_med,'nmad_deb_thick':debrismelt_enhancement_bin_nmad,
-        'q1_deb_thick':debrismelt_enhancement_bin_q1,'q3_deb_thick':debrismelt_enhancement_bin_q3,
+        'q1_deb_melt_enhancement':debrismelt_enhancement_bin_q1,'q3_deb_melt_enhancement':debrismelt_enhancement_bin_q3,
 
         'med_vm':vm_bin_med,'nmad_vm':vm_bin_nmad,
         'q1_vm':vm_bin_q1,'q3_vm':vm_bin_q3,
