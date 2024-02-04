@@ -18,9 +18,11 @@ dependencies:
  - cartopy
  - jupyterlab 
  - ipympl
- - bookeh
+ - bokeh
  - wget 
  - requests
+ - urllib3
+ - xmltodict
  
  # geospatial (raster+vector)
  - gdal
@@ -38,21 +40,16 @@ dependencies:
  # misc
  - pip
  - psutil
-  - pip:
+ - pip:
    - geojson
    - matplotlib-colorbar
    - matplotlib-scalebar
    - multiprocess
    - p-tqdm
    - ppft
-   - srtm4
-   - urllib3
-   - xmltodict
-   # rotation_matrices
-   - pyquaternion
    # misc
    - p_tqdm
    # geospatial+plotting
    - "--editable=git+https://github.com/dshean/pygeotools.git#egg=pygeotools"
    - "--editable=git+https://github.com/dshean/demcoreg.git#egg=demcoreg"
-   - "--editable=git+https://github.com/ShashankBice/imview.git@jglac_version#egg=imview" 
+   - "--editable=git+https://github.com/ShashankBice/imview.git@jglac#egg=imview" 
