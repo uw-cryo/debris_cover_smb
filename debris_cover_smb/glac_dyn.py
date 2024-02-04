@@ -602,7 +602,7 @@ def add_quiver_contour(ax, vx, vy, stride=5, color='dodgerblue',scale=500,levels
         ax.contour(np.ma.sqrt(vx**2+vy**2),colors='k',linewidths=0.35,
             levels=levels)
         
-def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick,debris_melt_enhancement_ma,vm,z1,ds,bin_width=50,divQ2_error=None):
+def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick,debris_melt_enhancement_ma,vm,z1,ds,bin_width=50,smb_error=None):
     # digitise and other tricks picked from gmbtools repository by David
     res = geolib.get_res(ds,square=True)
     z_bin_edges, z_bin_centers = malib.get_bins(z1, bin_width)
@@ -652,9 +652,9 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
     vm_bin_q1 = np.ma.masked_all_like(mb_bin_med_background)
     vm_bin_q3 = np.ma.masked_all_like(mb_bin_med_background)
 
-    if divQ2_error is not None:
-        divQ2_error_bin_mean = np.ma.masked_all_like(mb_bin_med_background)
-        divQ2_error_bin_med = np.ma.masked_all_like(mb_bin_med_background)
+    if smb_error is not None:
+        smb_error_bin_mean = np.ma.masked_all_like(mb_bin_med_background)
+        smb_error_bin_med = np.ma.masked_all_like(mb_bin_med_background)
     
     idx = np.digitize(z1,z_bin_edges)
     for bin_n in range(z_bin_centers.size):
@@ -717,10 +717,10 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
         q1,q3 = np.nanpercentile(vm_samp.filled(np.nan),(25,75))
         vm_bin_q1[bin_n] = q1
         vm_bin_q3[bin_n] = q3
-        if divQ2_error is not None:
-            divQ2_samp = divQ2_error[(idx == bin_n+1)]
-            divQ2_error_bin_mean[bin_n] = np.round(np.ma.mean(divQ2_samp),2) 
-            divQ2_error_bin_med[bin_n] = np.round(malib.fast_median(divQ2_samp),2)
+        if smb_error is not None:
+            smb_error_samp = smb_error[(idx == bin_n+1)]
+            smb_error_bin_mean[bin_n] = np.round(np.ma.mean(smb_error_samp),2) 
+            smb_error_bin_med[bin_n] = np.round(malib.fast_median(smb_error_samp),2)
         
         
         
@@ -751,16 +751,16 @@ def hist_plot_gmbtools(hotspot_dh,background_dh,clean_ice_dh,smb_dh,debris_thick
         'q1_deb_thick':debthick_bin_q1,'q3_deb_thick':debthick_bin_q3,
 
         'med_deb_melt_enhancement':debrismelt_enhancement_bin_med,'nmad_deb_thick':debrismelt_enhancement_bin_nmad,
-        'q1_deb_melt_enhancement':debrismelt_enhancement_bin_q1,'q3_deb_melt_enhancement':debrismelt_enhancement_bin_q3,
+        'q1_deb_melt_enhancement':debrismelt_enhancement_bin_q1,'q3_deb_melt_enhancemente ':debrismelt_enhancement_bin_q3,
 
         'med_vm':vm_bin_med,'nmad_vm':vm_bin_nmad,
         'q1_vm':vm_bin_q1,'q3_vm':vm_bin_q3,
 
         'z_area':z1_bin_areas,
         'z_bin_centers':z_bin_centers})
-    if divQ2_error is not None:
-        stats_df['divQ2_mean_stddev'] = divQ2_error_bin_mean
-        stats_df['divQ2_med_stddev'] = divQ2_error_bin_med
+    if smb_error is not None:
+        stats_df['smb_error_mean'] = smb_error_bin_mean
+        stats_df['smb_error_med'] = smb_error_bin_med
     
     return stats_df
 
@@ -828,7 +828,7 @@ def prepare_lag_smb_figure(eul_dhdt,lag_dhdt, downslope_dhdt, smb_dhdt,ds,ax,cli
 #################### Full Lag SMB workflow function ###########################
 def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enhacement_fn,glac_shp,glac_identifier,lengthscale_factor=4,
                      num_thickness_division=5,smr_cutoff=135,timescale='year',icecliff_gpkg=None,writeout=True,saveplot=True,outdir=None,
-                     conserve_mass=True,flux_divergence_sensitivity_fn=None):
+                     conserve_mass=True,smb_uncertainty_fn=None):
     """
     Workflow to compute residual elevation change due to surface melting following the continuity equation
     Parameters
@@ -977,8 +977,8 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enha
     # warp 50 m resolution data (ice-thickness and flux divergence) and read as masked arrays
     #warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,'divQ2_smooth_ver1.tif']],res='first',r='cubicspline')[-2:]
     #use cubicspline as these 2 products are lower res
-    if flux_divergence_sensitivity_fn is not None:
-        H,divQ2,divQ2_error,debris_ma,debris_melt_enhancement_ma,downslope_dhdt = [iolib.ds_getma(ds) for ds in warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,fluxdiv_outfn,flux_divergence_sensitivity_fn,deb_thick_fn,deb_melt_enhacement_fn,downslope_outfn]],
+    if smb_uncertainty_fn is not None:
+        H,divQ2,smb_error,debris_ma,debris_melt_enhancement_ma,downslope_dhdt = [iolib.ds_getma(ds) for ds in warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,fluxdiv_outfn,smb_uncertainty_fn,deb_thick_fn,deb_melt_enhacement_fn,downslope_outfn]],
                                                                                    res='first',r='cubic',extent='first')[-6:]]
     else:
         H,divQ2,debris_ma,debris_melt_enhancement_ma,downslope_dhdt = [iolib.ds_getma(ds) for ds in warplib.memwarp_multi(ds_list_highres+[iolib.fn_getds(fn) for fn in [H_fn,fluxdiv_outfn,deb_thick_fn,deb_melt_enhacement_fn,downslope_outfn]],
@@ -1061,7 +1061,7 @@ def lag_smb_workflow(dem1_fn,dem2_fn,vx_fn,vy_fn,H_fn,deb_thick_fn,deb_melt_enha
         base_elevation = np.ma.array(dem1,mask=np.ma.getmask(H))
         vm = np.ma.array(np.ma.sqrt(vx**2+vy**2),mask=np.ma.getmask(H))
         
-        stats_df = hist_plot_gmbtools(hotspot_smb_dhdt,background_smb_dhdt,clean_ice_dhdt,smb_clean,debris_ma,debris_melt_enhancement_ma,vm,base_elevation,ds_list_highres[0],divQ2_error=divQ2_error)
+        stats_df = hist_plot_gmbtools(hotspot_smb_dhdt,background_smb_dhdt,clean_ice_dhdt,smb_clean,debris_ma,debris_melt_enhancement_ma,vm,base_elevation,ds_list_highres[0],smb_error=smb_error)
         
         
         print("************ Creating plots ****************")

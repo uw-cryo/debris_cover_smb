@@ -17,8 +17,8 @@ def getparser():
     parser.add_argument('-H_ver',default='farinotti', choices=thickness_choices, type=str, 
         help='wether to use farinotti or milan thickness values (default: %(default)s)')
     glacier_choices = ['ngozumpa','khumbu','changri_nup','imja','langtang','lirung','cn_validation']
-    parser.add_argument('-flux_divergence_sensitivity_fn',type=str,default=None,
-                        help='path to user-provided flux divergence sensitivity file, will not compute these statats in not provided (default: %(default)s)')
+    parser.add_argument('-smb_uncertainty_fn',type=str,default=None,
+                        help='path to user-provided smb uncertainty file, will not compute these stats in not provided (default: %(default)s)')
     parser.add_argument('-glac_identifier', default=None, required=True, type=str, choices=glacier_choices, help='name of glacier')
     parser.add_argument('-lengthscale_factor', default=5, type=int, 
         help='Factor to multiply ice thickness values with for computing lengthscale (default: %(default)s)')
@@ -55,7 +55,7 @@ def main():
                                                              args.vy_fn,H_fn,debris_thick_fn,debris_melt_enhancement_fn,glac_shp,out_identifier, args.lengthscale_factor,
                                                              args.num_thickness_divison,args.smr_cutoff,args.timescale,args.icecliff_gpkg,
                                                              args.writeout,args.saveplot,args.outdir,conserve_mass=args.conserve_mass,
-                                                             flux_divergence_sensitivity_fn=args.flux_divergence_sensitivity_fn)
+                                                             smb_uncertainty_fn=args.smb_uncertainty_fn)
      
 
     print('\n%s' % datetime.now())
