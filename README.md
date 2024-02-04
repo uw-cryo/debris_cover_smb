@@ -16,6 +16,7 @@ Figure 1: Schematic of steps to compute Lagrangian Surface Mass Balance from DEM
   * [download_supporting_data.ipynb](/notebooks/analysis/download_supporting_data.ipynb): Utilities to download ancillary data (e.g., ice thickness, debris thickness) 
   * [icethickness_sensitivity.ipynb](/notebooks/analysis/icethickness_sensitivity.ipynb): Assess flux divergence sensitivity due to ice thickness
   * [Cliff_sensitivity_analysis.ipynb](/notebooks/analysis/Cliff_sensitivity_analysis.ipynb): Confusion matrix analysis for ice cliffs maps, Black Changri Nup Glacier
+  * [propagate_uncertainty_upgraded_formula.ipynb](/notebooks/analysis/propagate_uncertainty_upgraded_formula.ipynb): Uncertainty estimation and uncertainty figure generation
   * [Glacier_description_table.ipynb](/notebooks/analysis/Glacier_description_table.ipynb): Compile statistics for the study sites glacier stats table
   * [Vel_DhDt_uncertainty.ipynb](/notebooks/analysis/Vel_DhDt_uncertainty.ipynb): Uncertainty estimates for velocity and Lagrangian DhDt products
   * [Flux_check.ipynb](/notebooks/analysis/Flux_check.ipynb): Verify volume conservation before and after application of adaptive Gaussian filtering
