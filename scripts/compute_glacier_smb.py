@@ -32,7 +32,7 @@ def getparser():
     parser.add_argument('-writeout',action='store_true',help='Writeout computed maps if invoked')
     parser.add_argument('-saveplot', action='store_true',  help='Writeout compute figures if invoked')
     parser.add_argument('-outdir', default=None, type=str, help='path to output directory where to store results\ndefaults to {DEM_timestamps}_lag_smb_results')
-    parser.add_argument('-conserve_mass',action='store_true',help='do not use if full glacier is covered')
+    parser.add_argument('-conserve_mass',action='store_true',help='this is experimental and not used in manuscript, especially do not use if full glacier is covered')
     return parser
 
 def main():
