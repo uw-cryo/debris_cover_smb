@@ -2,7 +2,7 @@
 Tools and notebooks for computing Surface Mass Balance (SMB) over debris-covered glaciers from remote sensing products
 
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10622093.svg)](https://doi.org/10.5281/zenodo.10622093)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11193295.svg)](https://doi.org/10.5281/zenodo.11193295)
 
 ![Overview_fig](figure/DEMs2SMB.png)
 Figure 1: Schematic of steps to compute Lagrangian Surface Mass Balance from DEM differencing. Eulerian/Lagrangian graphics are copyright [flowillustrator](www.flowillustrator.com). WorldView satellite logo are copyright [Maxar](https://www.maxar.com/).
