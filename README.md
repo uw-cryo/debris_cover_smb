@@ -2,7 +2,7 @@
 Tools and notebooks for computing Surface Mass Balance (SMB) over debris-covered glaciers from remote sensing products
 
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11193295.svg)](https://doi.org/10.5281/zenodo.11193295)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11510265.svg)](https://doi.org/10.5281/zenodo.11510265)
 
 ![Overview_fig](figure/DEMs2SMB.png)
 Figure 1: Schematic of steps to compute Lagrangian Surface Mass Balance from DEM differencing. Eulerian/Lagrangian graphics are copyright [flowillustrator](www.flowillustrator.com). WorldView satellite logo are copyright [Maxar](https://www.maxar.com/).
@@ -47,5 +47,5 @@ If you would like to use the tools for applying Lagrangian elevation change to y
 
 ## Citation
 The code in this repository was developed for the under-review manuscript: 
-* Bhushan S., Shean D., Hu J. M., Rounce D., Guillet G. (under-review): Deriving seasonal and annual surface mass balance for debris-covered glaciers in Central Himalaya from flow-corrected satellite stereo DEM time series. 
+* Bhushan S., Shean D., Hu J. M., Guillet G., and Rounce D., (2024, in-press): Deriving seasonal and annual surface mass balance for debris-covered glaciers in Central Himalaya from flow-corrected satellite stereo DEM time series. 
 
