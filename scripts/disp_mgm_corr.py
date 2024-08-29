@@ -29,7 +29,7 @@ import numpy as np
 from pygeotools.lib import warplib, geolib, iolib,timelib,malib
 from pygeotools.lib.malib import calcperc  
 
-from velocity_proc import velocity_filter
+from debris_cover_smb import velocity_filter
 
 ## Utility functions
 # we can resample the products at 8m producing products at skip size of 4 
@@ -194,6 +194,7 @@ def getparser():
     parser.add_argument('-fillimit',default=100,type=int,
         help='do not fill gaps if the semi-minor axis of data gap is larger than filllim pixels (default: %(default)s)')
     parser.add_argument('-overwrite',action='store_true',help='overwrite currently existing files if true')
+    parser.add_argument('-pleiades',action='store_true',help='use pleiades specific thread settings, otherwise use default settings')
     #Inputs can be images, DEMs, shaded relief maps
     #Personal experience suggests multi-directional hillshades with identical illumination work well
     #Only 2 input datsets allowed for this - want to stay modular
@@ -275,7 +276,7 @@ def disp2v(dx,dy,xres,yres,t_factor,dt='day',remove_offsets=False,mask_list=['gl
 
 def get_correlator_opt(corr_kernel=(9,9),nlevels=5,spr=9,
     rfne_kernel=(15,15),erode=0,align='None',txm_size=50,entry_point=0,stop_point=None,texture_smooth=False,
-    median_filter_size=41):
+    median_filter_size=41,pleiades=False):
     correlator_opt = []
     correlator_opt.extend(['--correlator-mode'])
     correlator_opt.extend(['--ip-per-tile', str(2000)])
@@ -295,26 +296,27 @@ def get_correlator_opt(corr_kernel=(9,9),nlevels=5,spr=9,
     if stop_point is not None:
         correlator_opt.extend(['--stop-point', str(stop_point)])
 
-    # copy settings from stereo processing
-    corrtilesize=1024
-    corrmemlim=5000
-    pstereo_proc=18
-    
-    # 4 = ternary census transform - use for SGM/MGM
-    costmode=3
+    if pleiades:
+        # copy settings from stereo processing
+        corrtilesize=1024
+        corrmemlim=5000
+        pstereo_proc=18
+        
+        # 4 = ternary census transform - use for SGM/MGM
+        costmode=3
 
-    # bro has 56 total cores (28 phyiscal + 28 threading)
-    # 25 correlation processes, using 2 threads each
-    thread_parallel=2 
-    # bro has 28 physical cores, use 24 ?
-    thread_single=24
-    correlator_opt.extend(['--corr-tile-size',str(corrtilesize)])
-    correlator_opt.extend(['--corr-memory-limit-mb', str(corrmemlim)])
-    correlator_opt.extend(['--cost-mode',str(costmode)])
-    correlator_opt.extend(['--processes', str(pstereo_proc)])
-    correlator_opt.extend(['--threads-multiprocess', str(thread_parallel)])
-    correlator_opt.extend(['--threads-singleprocess', str(thread_single)])
-    #correlator_opt.extend(['--keep-only', '-D.tif', '-RD.tif', '-F.tif'])
+        # bro has 56 total cores (28 phyiscal + 28 threading)
+        # 25 correlation processes, using 2 threads each
+        thread_parallel=2 
+        # bro has 28 physical cores, use 24 ?
+        thread_single=24
+        correlator_opt.extend(['--corr-tile-size',str(corrtilesize)])
+        correlator_opt.extend(['--corr-memory-limit-mb', str(corrmemlim)])
+        correlator_opt.extend(['--cost-mode',str(costmode)])
+        correlator_opt.extend(['--processes', str(pstereo_proc)])
+        correlator_opt.extend(['--threads-multiprocess', str(thread_parallel)])
+        correlator_opt.extend(['--threads-singleprocess', str(thread_single)])
+        #correlator_opt.extend(['--keep-only', '-D.tif', '-RD.tif', '-F.tif'])
     return correlator_opt
 
 def gen_d_sub(d_sub_fn, dx, dy, pad_perc=0.1, ndv=-9999):
@@ -438,14 +440,14 @@ def main():
         if seedmode == "D_sub":
             correlator_opt = get_correlator_opt(corr_kernel=corr_kernel,nlevels=args.pyramid_levels,
             spr=spr, rfne_kernel=rfne_kernel,erode=erode,align=align,entry_point=0,
-            txm_size=txm_size,texture_smooth=args.texture_smooth,median_filter_size=median_filter_size)
+            txm_size=txm_size,texture_smooth=args.texture_smooth,median_filter_size=median_filter_size,pleiades=args.pleiades)
             print("No seed velocity provided, D_sub will be caluclated by IP matching")
             run_cmd('parallel_stereo',correlator_opt+corr_args,msg='Full correlation')
 
         
         elif seedmode == 'existing_velocity':
             pprc_opt = get_correlator_opt(corr_kernel=corr_kernel,nlevels=args.pyramid_levels,
-            spr=spr, rfne_kernel=rfne_kernel,erode=erode,align=align,entry_point=0,stop_point=1)
+            spr=spr, rfne_kernel=rfne_kernel,erode=erode,align=align,entry_point=0,stop_point=1,pleiades=args.pleiades)
             print("Running stereo preprocessing")
             run_cmd('parallel_stereo',pprc_opt+corr_args,msg='0:stereo pprc')
 
@@ -487,7 +489,7 @@ def main():
                     ## Now we have D_sub, we will proceed with full resolution correlation
                     correlator_opt = get_correlator_opt(corr_kernel=corr_kernel,nlevels=args.pyramid_levels,
                         spr=spr, rfne_kernel=rfne_kernel,erode=erode,align=align,entry_point=1,
-                        txm_size=txm_size,texture_smooth=args.texture_smooth,median_filter_size=median_filter_size)
+                        txm_size=txm_size,texture_smooth=args.texture_smooth,median_filter_size=median_filter_size,pleiades=args.pleiades)
                     correlator_opt.extend(['--skip-low-res-disparity-comp'])
 
                     print("Running full correlation")

@@ -1,3 +1,3 @@
 #! /usr/bin/env python
 
-__all__=['glac_dyn','constants','geospatial']
+__all__=['glac_dyn','constants','geospatial','velocity_filter']
