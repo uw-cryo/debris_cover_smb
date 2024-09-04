@@ -47,5 +47,5 @@ If you would like to use the tools for applying Lagrangian elevation change to y
 
 ## Citation
 The code in this repository was developed for the under-review manuscript: 
-* Bhushan S., Shean D., Hu J. M., Guillet G., and Rounce D., (2024, in-press): Deriving seasonal and annual surface mass balance for debris-covered glaciers from flow-corrected satellite stereo DEM time series, Journal of Glaciology. 
+* Bhushan S, Shean D, Hu JM, Guillet G, Rounce DR (2024). Deriving seasonal and annual surface mass balance for debris-covered glaciers from flow-corrected satellite stereo DEM time series. Journal of Glaciology 1–22. https://doi.org/10.1017/jog.2024.57 
 
