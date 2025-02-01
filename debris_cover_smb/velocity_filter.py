@@ -6,7 +6,7 @@ from imview import pltlib
 import pandas as pd
 from pygeotools.lib import warplib,geolib,iolib,malib,filtlib,timelib
 import os,sys,glob
-from velocity_proc import glac_dyn, constants
+from debris_cover_smb import glac_dyn, constants
 from skimage.restoration import denoise_nl_means, estimate_sigma
 from skimage.metrics import peak_signal_noise_ratio
 from skimage.measure import label, regionprops
