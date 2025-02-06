@@ -1,11 +1,12 @@
 # debris_cover_smb
-Tools and notebooks for computing Surface Mass Balance (SMB) over debris-covered glaciers from remote sensing products
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10622092.svg)](https://doi.org/10.5281/zenodo.10622092)
 
+Tools and notebooks for processing high-resolution digital elevation models (DEMs), preparing dense 3D displacement products, correcting for ice flow and computing seasonal to annual surface mass balance (SMB) rates for debris-covered glaciers. 
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11510265.svg)](https://doi.org/10.5281/zenodo.11510265)
+Please see [Bhushan et al. (2024)](https://doi.org/10.1017/jog.2024.57) open-access *Journal of Glaciology* publication for details.
 
 ![Overview_fig](figure/DEMs2SMB.png)
-Figure 1: Schematic of steps to compute Lagrangian Surface Mass Balance from DEM differencing. Eulerian/Lagrangian graphics are copyright [flowillustrator](www.flowillustrator.com). WorldView satellite logo are copyright [Maxar](https://www.maxar.com/).
+Figure 1: Schematic of steps to prepare Lagrangian Surface Mass Balance from stereo DEMs. Eulerian/Lagrangian illustration from [flowillustrator](www.flowillustrator.com). WorldView satellite graphic from [Maxar](https://www.maxar.com/).
 
 ## Table of contents
 * Functions Library
@@ -43,9 +44,11 @@ Figure 1: Schematic of steps to compute Lagrangian Surface Mass Balance from DEM
 * [Document to produce SMB maps step by step](/Reproduce_workflow.md)
 
 ## Contact us
-If you would like to use the tools for applying Lagrangian elevation change to your study site, please feel free to reach out to Shashank Bhushan (sbaglapl@uw.edu) :D 
+If you encountary any issues or would like to discuss new applications with these tools, please feel free to reach out to Shashank Bhushan (sbhusha1@umd.edu) :D 
 
 ## Citation
-The code in this repository was developed for the under-review manuscript: 
-* Bhushan S, Shean D, Hu JM, Guillet G, Rounce DR (2024). Deriving seasonal and annual surface mass balance for debris-covered glaciers from flow-corrected satellite stereo DEM time series. Journal of Glaciology 1–22. https://doi.org/10.1017/jog.2024.57 
+If you use these tools for research purposes, please cite the publicaiont and the appropriate Zenodo DOI for the corresponding version: 
 
+> Bhushan S, Shean D, Hu J-YM, Guillet G, Rounce DR (2024). Deriving seasonal and annual surface mass balance for debris-covered glaciers from flow-corrected satellite stereo DEM time series. Journal of Glaciology. 2024;70:e6. [doi:10.1017/jog.2024.57](https://doi.org/10.1017/jog.2024.57)
+> 
+> Bhushan S, Shean D (2024), uw-cryo/debris_cover_smb (0.X). Zenodo. https://doi.org/10.5281/zenodo.10622092
