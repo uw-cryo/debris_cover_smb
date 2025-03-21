@@ -152,7 +152,10 @@ def getparser():
     parser.add_argument('-corr_kernel', choices=corr_kernel_choices,type=int, 
         default=9, 
         help='Correlator kernel size. Smaller kernels offer more detail but are prone to more noise. Odd integers required (~3-9 px recommended). (default: %(default)s)')
+    
     # choices=corr_kernel_choices
+    parser.add_argument('-corr_search_limt',help="4 numbers sperated by space within single quotes (e.g., '-20 -20 20 20') Limits for correlation search if running on flat, low texture surface to improve computing performance",
+                        default=None,type=str)
     parser.add_argument('-rfne_kernel',type=int, 
         default=15, 
         help='Refinement (for subpixel displacement estimation) kernel. Smaller kernels offer more detail but are prone to more noise. Odd integers required (~3-9 px recommended). (default: %(default)s)')
@@ -160,6 +163,7 @@ def getparser():
     parser.add_argument('-texture_smooth',action='store_true')
     parser.add_argument('-refinement', type=int, default=9, 
         help='Sub-pixel refinement type (see ASP doc): 0 -no subpixel refinement, 1 - parabola fitting, 2 - affine adaptive window, Bayes EM weighting, 3 - affine window, 4 - phase correlation, 5 - Lucas-Kanade method (experimental), 6 - affine adaptive window, Bayes EM with Gamma Noise Distribution (experimental), 7 - SGM None, 8 - SGM linear, 9 - SGM Poly4, 10 - SGM Cosine, 11 - SGM Parabola, 12 - SGM Blend (default: %(default)s)')
+    
     #Integer correlator seeding
     #D_sub is low-resolution correlation (default), which works well for most situations
     #sparse_disp will use sparse seeding from full-res chips, useful for ice sheets with limited low-frequency texture (not supported here)
@@ -195,6 +199,7 @@ def getparser():
         help='do not fill gaps if the semi-minor axis of data gap is larger than filllim pixels (default: %(default)s)')
     parser.add_argument('-overwrite',action='store_true',help='overwrite currently existing files if true')
     parser.add_argument('-pleiades',action='store_true',help='use pleiades specific thread settings, otherwise use default settings')
+    parser.add_argument('-nodes_list',help='PBS reserved node list for distributed processing',default=None)
     #Inputs can be images, DEMs, shaded relief maps
     #Personal experience suggests multi-directional hillshades with identical illumination work well
     #Only 2 input datsets allowed for this - want to stay modular
@@ -283,7 +288,12 @@ def get_correlator_opt(corr_kernel=(9,9),nlevels=5,spr=9,
     correlator_opt.extend(['--stereo-algorithm', 'asp_mgm'])
     correlator_opt.extend(['--corr-kernel', str(corr_kernel[0]), str(corr_kernel[1])])
     #correlator_opt.extend(['--cost-mode', str(4)])
-    
+    if args.corr_search_limit:
+        corr_search_limit = args.corr_search_limit.split(' ')
+        if len(corr_search_limit) != 4:
+            sys.exit("corr_search_limit should have 4 values within quotes")
+        correlator_opt.extend(['--corr-search-limit', corr_search_limit[0], 
+                               corr_search_limit[1], corr_search_limit[2], corr_search_limit[3]])
     correlator_opt.extend(['--subpixel-mode',str(spr)])
     correlator_opt.extend(['--subpixel-kernel', str(rfne_kernel[0]), str(rfne_kernel[1])])
     if texture_smooth:
@@ -316,6 +326,7 @@ def get_correlator_opt(corr_kernel=(9,9),nlevels=5,spr=9,
         correlator_opt.extend(['--processes', str(pstereo_proc)])
         correlator_opt.extend(['--threads-multiprocess', str(thread_parallel)])
         correlator_opt.extend(['--threads-singleprocess', str(thread_single)])
+        
         #correlator_opt.extend(['--keep-only', '-D.tif', '-RD.tif', '-F.tif'])
     return correlator_opt
 
@@ -441,6 +452,8 @@ def main():
             correlator_opt = get_correlator_opt(corr_kernel=corr_kernel,nlevels=args.pyramid_levels,
             spr=spr, rfne_kernel=rfne_kernel,erode=erode,align=align,entry_point=0,
             txm_size=txm_size,texture_smooth=args.texture_smooth,median_filter_size=median_filter_size,pleiades=args.pleiades)
+            if args.nodes_list:
+                correlator_opt.extend(['--nodes-list',args.nodes_list])
             print("No seed velocity provided, D_sub will be caluclated by IP matching")
             run_cmd('parallel_stereo',correlator_opt+corr_args,msg='Full correlation')
 
