@@ -154,7 +154,7 @@ def getparser():
         help='Correlator kernel size. Smaller kernels offer more detail but are prone to more noise. Odd integers required (~3-9 px recommended). (default: %(default)s)')
     
     # choices=corr_kernel_choices
-    parser.add_argument('-corr_search_limt',help="4 numbers sperated by space within single quotes (e.g., '-20 -20 20 20') Limits for correlation search if running on flat, low texture surface to improve computing performance",
+    parser.add_argument('-corr_search_limit',help="4 numbers sperated by space within single quotes (e.g., '-20 -20 20 20') Limits for correlation search if running on flat, low texture surface to improve computing performance",
                         default=None,type=str)
     parser.add_argument('-rfne_kernel',type=int, 
         default=15, 
@@ -288,12 +288,6 @@ def get_correlator_opt(corr_kernel=(9,9),nlevels=5,spr=9,
     correlator_opt.extend(['--stereo-algorithm', 'asp_mgm'])
     correlator_opt.extend(['--corr-kernel', str(corr_kernel[0]), str(corr_kernel[1])])
     #correlator_opt.extend(['--cost-mode', str(4)])
-    if args.corr_search_limit:
-        corr_search_limit = args.corr_search_limit.split(' ')
-        if len(corr_search_limit) != 4:
-            sys.exit("corr_search_limit should have 4 values within quotes")
-        correlator_opt.extend(['--corr-search-limit', corr_search_limit[0], 
-                               corr_search_limit[1], corr_search_limit[2], corr_search_limit[3]])
     correlator_opt.extend(['--subpixel-mode',str(spr)])
     correlator_opt.extend(['--subpixel-kernel', str(rfne_kernel[0]), str(rfne_kernel[1])])
     if texture_smooth:
@@ -452,6 +446,12 @@ def main():
             correlator_opt = get_correlator_opt(corr_kernel=corr_kernel,nlevels=args.pyramid_levels,
             spr=spr, rfne_kernel=rfne_kernel,erode=erode,align=align,entry_point=0,
             txm_size=txm_size,texture_smooth=args.texture_smooth,median_filter_size=median_filter_size,pleiades=args.pleiades)
+            if args.corr_search_limit:
+                corr_search_limit = args.corr_search_limit.split(' ')
+                if len(corr_search_limit) != 4:
+                    sys.exit("corr_search_limit should have 4 values within quotes")
+                correlator_opt.extend(['--corr-search-limit', corr_search_limit[0], 
+                               corr_search_limit[1], corr_search_limit[2], corr_search_limit[3]])
             if args.nodes_list:
                 correlator_opt.extend(['--nodes-list',args.nodes_list])
             print("No seed velocity provided, D_sub will be caluclated by IP matching")
